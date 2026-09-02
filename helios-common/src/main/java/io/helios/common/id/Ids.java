@@ -1,11 +1,13 @@
+package io.helios.common.id;
+
 import java.util.UUID;
 
 public final class Ids {
 
-    private Ids(){
-    }   
+    private Ids() {
+    }
 
-    public static String newRunId(){
+    public static String newRunId() {
         return UUID.randomUUID().toString();
     }
 

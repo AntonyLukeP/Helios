@@ -1,3 +1,5 @@
+package io.helios.common.command;
+
 public enum CommandType {
     ScheduleActivity,
     RequestCancelActivity,
