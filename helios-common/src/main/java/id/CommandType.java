@@ -12,4 +12,12 @@ public enum CommandType {
     FailWorkflow,
     CancelWorkflow,
     ContinueAsNew;
+
+    public String wire() {
+        return name();
+    }
+
+    public static CommandType from(String name) {
+        return valueOf(name);
+    }
 }
