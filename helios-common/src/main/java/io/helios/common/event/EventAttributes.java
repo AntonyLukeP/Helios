@@ -1,3 +1,5 @@
+package io.helios.common.event;
+
 public record EventAttributes(
         String activityId,
         String activityType,
