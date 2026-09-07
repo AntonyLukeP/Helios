@@ -1,0 +1,89 @@
+# ─── Gradle ───────────────────────────────────────────────────────────────────
+.gradle/
+build/
+out/
+**/build/
+**/out/
+
+# Gradle wrapper jar is committed; everything else is derived
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# ─── Maven (in case any module uses it) ───────────────────────────────────────
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# ─── Java ─────────────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ─── Spring Boot ──────────────────────────────────────────────────────────────
+spring-shell.log
+
+# ─── IntelliJ IDEA ────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+
+# ─── VS Code ──────────────────────────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ─── Eclipse ──────────────────────────────────────────────────────────────────
+.classpath
+.project
+.settings/
+.factorypath
+
+# ─── Node / React dashboard ───────────────────────────────────────────────────
+dashboard/node_modules/
+dashboard/.next/
+dashboard/dist/
+dashboard/.env.local
+dashboard/.env.*.local
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+# ─── Local environment / secrets ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.secret
+secrets/
+local.properties
+
+# ─── OS artefacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Test / coverage output ───────────────────────────────────────────────────
+**/test-results/
+**/jacoco/
+**/coverage/
+*.exec
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+# (Docker files are committed; ignore any local override compose files)
+docker-compose.override.yml
+
+# ─── Kubernetes / Helm local overrides ────────────────────────────────────────
+deploy/local-values.yaml
+
+# ─── Misc tooling ─────────────────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
