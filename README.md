@@ -23,6 +23,8 @@ No engine code exists yet.
 | Java (JDK) | **21 LTS** (Eclipse Temurin recommended) |
 | Git | 2.x+ |
 
+→ **[Getting started: clone, run tests, apply formatting](docs/getting-started.md)**
+
 ---
 
 ## Implementation

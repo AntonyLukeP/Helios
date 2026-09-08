@@ -1,51 +1,82 @@
+// Root build.gradle — conventions and guardrails shared by all modules.
+// No production code or module-specific dependencies live here.
+
 plugins {
-    alias(libs.plugins.spring.boot) apply false
-    alias(libs.plugins.spring.depmgmt) apply false
-    alias(libs.plugins.spotless) apply false
+    // 'base' gives the root project a 'check' lifecycle task, so
+    // './gradlew check' from the root includes root-level spotlessCheck.
+    id 'base'
+    // Spotless: automatic, reproducible code formatting.
+    // Applied here (root) for Gradle files; applied again inside subprojects for Java.
+    id 'com.diffplug.spotless' version '6.25.0'
 }
 
+// ── Spotless: root-level (Gradle files only) ──────────────────────────────────
+// Java source formatting is done per-subproject so it hooks into each
+// subproject's own 'check' task automatically.
+spotless {
+    format 'gradle', {
+        // Target every .gradle file in the repo, excluding generated build dirs.
+        target '**/*.gradle'
+        targetExclude '**/build/**'
+        // Conservative rules — no code restructuring, no import reordering.
+        trimTrailingWhitespace()
+        endWithNewline()
+        indentWithSpaces(4)
+    }
+}
+
+// ── Subproject conventions ────────────────────────────────────────────────────
 subprojects {
+
+    // Every submodule produces a Java library artifact.
     apply plugin: 'java-library'
+
+    // Spotless applied to each subproject so that 'spotlessCheck' is
+    // automatically wired into that subproject's 'check' lifecycle task.
     apply plugin: 'com.diffplug.spotless'
-    spotless {
-        java {
-            target 'src/**/*.java'
-            importOrder()
-            removeUnusedImports()
-            trimTrailingWhitespace()
-            endWithNewline()
-        }
-    }
 
-    group = 'io.helios'
-    version = '0.0.1-SNAPSHOT'
-
-    repositories {
-        mavenCentral()
-    }
-
+    // ── Java 21 toolchain ────────────────────────────────────────────────────
+    // Gradle locates JDK 21 regardless of JAVA_HOME; auto-provisions if absent.
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
     }
 
+    // ── Compiler settings ────────────────────────────────────────────────────
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
-        options.compilerArgs << '-Xlint:all' << '-parameters'
+        // Belt-and-suspenders with the toolchain declaration above.
+        options.release = 21
     }
 
-    dependencies {
-        testImplementation platform(libs.junit.bom)
-        testImplementation libs.junit.jupiter
-        testImplementation libs.assertj
-        testRuntimeOnly libs.junit.platform.launcher
+    // ── Dependency repositories ──────────────────────────────────────────────
+    repositories {
+        mavenCentral()
     }
 
+    // ── Spotless: Java source files ──────────────────────────────────────────
+    // Conservative style: removes unused imports and fixes whitespace only.
+    // Does NOT restructure code, reindent, wrap lines, or reorder imports.
+    spotless {
+        java {
+            removeUnusedImports()
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+    }
+
+    // ── Test runner ──────────────────────────────────────────────────────────
     tasks.withType(Test).configureEach {
         useJUnitPlatform()
         testLogging {
+            // Print the name of every test outcome — not just failures.
             events 'passed', 'skipped', 'failed'
+            // On failure: show the full exception type, message, cause chain,
+            // and trimmed stack trace so the failing line is immediately visible.
+            showExceptions true
+            showCauses true
+            showStackTraces true
             exceptionFormat 'full'
         }
     }

@@ -1,8 +1,0 @@
-// settings.gradle — the first file Gradle reads on every invocation.
-// It names the root project and declares which subdirectories are modules.
-
-rootProject.name = 'helios'
-
-// Phase 0: only the core engine module exists.
-// Storage, gateway, worker, timer, dashboard modules are added in later phases.
-include 'helios-core'
