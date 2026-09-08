@@ -1,0 +1,42 @@
+# Helios CI
+#
+# Triggered on every push and pull request that targets the main branch.
+# Runs the same `./gradlew check` command that developers run locally.
+# This workflow contains no deployment, publishing, secrets, or external services.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Build and verify
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1 — Check out the repository so subsequent steps have access to the code.
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      # Step 2 — Install Java 21 (Eclipse Temurin distribution, the same JDK used locally).
+      #           The 'cache: gradle' option tells setup-java to cache the Gradle
+      #           dependency cache (~/.gradle/caches) between runs, keyed on the
+      #           dependency lock files. First run downloads dependencies; subsequent
+      #           runs restore from cache, cutting build time significantly.
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      # Step 3 — Run the full verification suite.
+      #           'check' is the same lifecycle task used locally: it runs
+      #           spotlessCheck (formatting validation) and test (JUnit 5 suite).
+      #           The build fails if any test fails or any file has a formatting violation.
+      - name: Run checks
+        run: ./gradlew check --no-daemon

@@ -5,27 +5,43 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Smoke-test for the helios-core module.
+ * Unit tests for {@link ProjectInfo}.
  *
- * <p>Purpose: prove that the JUnit 5 platform, AssertJ, and the Java 21
- * toolchain are all wired up correctly. This test contains no workflow logic.
+ * <p>This test class has two roles:
+ *
+ * <ol>
+ *   <li>Prove that the JUnit 5 platform, AssertJ, and the Java 21 toolchain are wired correctly.
+ *   <li>Document the expected values of the project's compile-time constants.
+ * </ol>
+ *
+ * <p>No workflow, storage, or framework logic is tested here.
  */
-@DisplayName("ProjectInfo")
+@DisplayName("ProjectInfo constants")
 class ProjectInfoTest {
 
     @Test
-    @DisplayName("project name constant equals 'helios'")
+    @DisplayName("NAME equals the canonical project identifier 'helios'")
     void projectNameIsHelios() {
         Assertions.assertThat(ProjectInfo.NAME)
-                .as("ProjectInfo.NAME should be the canonical project name")
+                .as("ProjectInfo.NAME must equal the canonical project name")
                 .isEqualTo("helios");
     }
 
     @Test
-    @DisplayName("major version is 0 during initial development")
+    @DisplayName("VERSION_MAJOR is 0 — no stable release has been cut yet")
     void majorVersionIsZero() {
         Assertions.assertThat(ProjectInfo.VERSION_MAJOR)
-                .as("Major version must be 0 until the first stable release")
+                .as("Major version stays 0 until the first public stable release")
                 .isZero();
+    }
+
+    @Test
+    @DisplayName("VERSION_MINOR is 1 — initial development phase has begun")
+    void minorVersionIsOne() {
+        // This test documents intent: minor == 1 means 'in active early development'.
+        // AssertJ's failure message will print the actual value, making regressions obvious.
+        Assertions.assertThat(ProjectInfo.VERSION_MINOR)
+                .as("Minor version should be 1 while initial features are being built")
+                .isEqualTo(1);
     }
 }

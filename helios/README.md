@@ -42,6 +42,29 @@ Every file is authored intentionally as part of the design and learning process.
 
 ---
 
+## Quality Checks
+
+Every change is verified by the same command, whether run locally or in CI:
+
+```bash
+# Linux / macOS / WSL
+./gradlew check
+
+# Windows (PowerShell or cmd)
+.\gradlew.bat check
+```
+
+`check` runs two things in sequence:
+
+| Step | What it does |
+|---|---|
+| `spotlessCheck` | Validates that all Java and Gradle files meet the project's formatting rules. Run `spotlessApply` first to fix any violations automatically. |
+| `test` | Compiles and runs the full JUnit 5 test suite. Failed test names and full exception traces are printed to the console. |
+
+**CI:** GitHub Actions runs `./gradlew check` on every push and pull request targeting `main`. The workflow is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It contains no deployment, publishing, secrets, or external service connections — only validation.
+
+---
+
 ## License
 
 Private — not yet licensed for distribution.
