@@ -1,0 +1,18 @@
+// helios-core/build.gradle
+// This module contains the workflow engine's core abstractions.
+// java-library is applied by the root build; only declare module-specific dependencies here.
+
+dependencies {
+
+    // ── Test dependencies ────────────────────────────────────────────────────
+
+    // JUnit 5 aggregator: pulls in junit-jupiter-api (write tests) +
+    // junit-jupiter-engine (run them) in one coordinate.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
+
+    // AssertJ: fluent assertion library — more readable than JUnit's built-in asserts.
+    testImplementation 'org.assertj:assertj-core:3.26.3'
+
+    // Required by Gradle 8+ to launch the JUnit Platform correctly at runtime.
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

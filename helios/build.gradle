@@ -1,0 +1,39 @@
+// Root build.gradle — conventions shared by every submodule.
+// Production code and dependencies live in each module's own build.gradle.
+
+subprojects {
+
+    // Every submodule is a Java library (can produce an API jar for others to depend on).
+    apply plugin: 'java-library'
+
+    // ── Java 21 toolchain ────────────────────────────────────────────────────
+    // Gradle will locate a JDK 21 on this machine regardless of JAVA_HOME.
+    // If one is not found it will attempt to auto-provision it.
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    // ── Compiler settings ────────────────────────────────────────────────────
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        // Enforce the language level explicitly (belt-and-suspenders with toolchain).
+        options.release = 21
+    }
+
+    // ── Dependency repositories ──────────────────────────────────────────────
+    repositories {
+        mavenCentral()
+    }
+
+    // ── Test runtime ─────────────────────────────────────────────────────────
+    // Tell Gradle to use the JUnit Platform (JUnit 5) to discover and run tests.
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            exceptionFormat 'short'
+        }
+    }
+}
