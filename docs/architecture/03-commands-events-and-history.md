@@ -1,4 +1,4 @@
-# 03 — Commands, Events, and History
+# 03 â€” Commands, Events, and History
 
 In Phase 1 the engine runs workflow logic once and returns a result. It has no
 memory between calls. Phase 2 introduces the three concepts that make memory
@@ -27,7 +27,7 @@ Once the engine accepts a command, it records what *happened* as an event:
 is a permanent, past-tense fact. It is never updated, never deleted, never
 corrected. If it was wrong, a later event records the correction.
 
-Immutability is not a rule imposed for cleanliness — it is what makes crash
+Immutability is not a rule imposed for cleanliness â€” it is what makes crash
 recovery possible. An engine that restores state by reading a history can only
 trust that history if every entry is a reliable, unmodified record.
 
@@ -36,14 +36,14 @@ trust that history if every entry is a reliable, unmodified record.
 ## 3. Why `ScheduleActivity` becomes `ActivityScheduled`, not `ActivityCompleted`
 
 QuickLend issues `ScheduleActivity("run-credit-check")`. The event recorded is
-`ActivityScheduled` — not `ActivityCompleted`, not `ActivitySucceeded`.
+`ActivityScheduled` â€” not `ActivityCompleted`, not `ActivitySucceeded`.
 
 This is deliberate. At the moment the engine records the scheduling event, the
 activity has not run. A worker has not been assigned. The bureau has not been
 called. Recording a *completion* event at scheduling time would be a lie, and a
 lie in the history would corrupt every replay that depends on it.
 
-The completion will be recorded later — in a separate `ActivityCompleted` event —
+The completion will be recorded later â€” in a separate `ActivityCompleted` event â€”
 when a worker actually reports the result back to the engine.
 
 ---
@@ -52,9 +52,9 @@ when a worker actually reports the result back to the engine.
 
 The workflow *type* is `loan-approval`. Many loans are in flight at once. The
 engine needs to know which history belongs to which loan, independently of the
-type name. A `runId` — a UUID assigned at start — provides that stable identity.
+type name. A `runId` â€” a UUID assigned at start â€” provides that stable identity.
 
-Alice's loan run is `run-7f3a…`. Bob's is `run-c91b…`. Both are `loan-approval`
+Alice's loan run is `run-7f3aâ€¦`. Bob's is `run-c91bâ€¦`. Both are `loan-approval`
 workflows. Their histories are completely separate. Any event, command, or query
 must carry the `runId` to be unambiguous.
 
@@ -79,8 +79,8 @@ Events within one run are ordered by a monotonically increasing integer:
 
 Allowing history to be modified would mean that the state you observe by
 replaying history might differ from the state that produced the original
-decisions. That gap — between what happened and what the history says happened
-— is the root cause of correctness bugs in workflow engines.
+decisions. That gap â€” between what happened and what the history says happened
+â€” is the root cause of correctness bugs in workflow engines.
 
 Even in Phase 2, where history lives only in memory and crashes lose everything,
 the append-only rule is enforced. Practicing it now means the code will be
@@ -96,9 +96,9 @@ Engine:   assign runId
           append  WorkflowStarted { runId, type, input, sequenceNo=1 }
           execute WorkflowDefinition.execute(input)
 Workflow: produces Command: ScheduleActivity("run-credit-check", loanId)
-Engine:   translate command → event
+Engine:   translate command â†’ event
           append  ActivityScheduled { runId, name, input, sequenceNo=2 }
-Caller:   engine.getHistory(runId)  →  [WorkflowStarted, ActivityScheduled]
+Caller:   engine.getHistory(runId)  â†’  [WorkflowStarted, ActivityScheduled]
 ```
 
 The activity is not executed. The history is not persisted. This is the full
@@ -106,7 +106,7 @@ scope of Phase 2.
 
 ---
 
-## Command → Event table
+## Command â†’ Event table
 
 | Command | Meaning | Event recorded now | What does NOT happen yet |
 |---|---|---|---|
@@ -137,3 +137,103 @@ scope of Phase 2.
 3. **An activity-scheduling event is not an activity result.** `ActivityScheduled`
    records intent; `ActivityCompleted` records outcome. They are separate events,
    separated in time by actual work.
+
+---
+
+## Phase 2 end-to-end example: loan-100 in three events
+
+The following is the exact history produced by the Phase 2 integration test for
+run ID `loan-100`, workflow type `LoanApproval`, input `application-100`.
+
+| Seq | Event type | Key fields | Meaning |
+|---|---|---|---|
+| 1 | `WorkflowStarted` | type=`LoanApproval`, input=`application-100` | The engine committed to starting this run. |
+| 2 | `ActivityScheduled` | activityId=`credit-check-1`, activityType=`checkCredit`, input=`application-100` | The workflow requested a credit check. The check has not run. |
+| 3 | `WorkflowCompleted` | result=`approved` | The workflow declared a successful outcome. Nothing is persisted beyond this process. |
+
+Sequence numbers are assigned by `InMemoryEventStore`, not by the caller.
+They are gap-free within one run and independent across different runs.
+
+---
+
+## What Helios can now do (Phase 2)
+
+- Represent the start of a workflow run as an ordered, immutable fact in memory.
+- Accept a manual decision (a list of commands) from a caller, validate it, and
+  record the resulting events in the correct sequence.
+- Return an immutable snapshot of a run's full event history on demand.
+- Enforce structural decision invariants: `CompleteWorkflow` must be last;
+  duplicate activity IDs in one decision are rejected.
+- Maintain independent, gap-free histories for any number of concurrent in-memory
+  runs.
+
+---
+
+## What Helios still cannot do (Phase 2 boundaries)
+
+- **Survive a process restart.** History lives in a `HashMap` in the JVM heap.
+  A crash or restart loses every event.
+- **Execute the credit check.** `ActivityScheduled` is intent only. No worker,
+  no thread, no queue, and no HTTP call is triggered by appending it.
+- **Await an activity result.** There is no mechanism for an external worker to
+  report back. `ActivityCompleted` does not exist yet.
+- **Retry failed work.** No retry policy, backoff, or dead-letter path is present.
+- **Prevent all invalid run-state transitions.** Applying a decision after
+  `WorkflowCompleted` is not yet blocked; terminal-state guarding belongs to the
+  state-machine phase.
+- **Append safely from concurrent threads.** `InMemoryEventStore` uses a plain
+  `HashMap` with no synchronization. Concurrent access produces undefined
+  behaviour.
+- **Expose an API.** No HTTP, gRPC, or messaging surface exists. The only entry
+  point is direct Java method calls in the same JVM.
+- **Provide a durable audit trail.** History is visible only within this process
+  lifetime.
+
+---
+
+## Component flow diagram
+
+```
+Caller
+  |
+  |  start(runId, workflowType, input)
+  |  applyDecision(runId, commands)
+  v
+InMemoryWorkflowHistoryService
+  |
+  |-- validate ---> DecisionValidator
+  |                   (structural rules: terminal last, no duplicate IDs)
+  |
+  |-- translate --> CommandToEventTranslator
+  |                   (ScheduleActivity -> ActivityScheduled,
+  |                    CompleteWorkflow  -> WorkflowCompleted)
+  |
+  |-- append ----> InMemoryEventStore
+  |                   (assigns gap-free sequence numbers per run,
+  |                    stores in ArrayList<RecordedEvent> per WorkflowRunId)
+  |
+  v
+EventHistory  <-- history(runId)  (unmodifiable snapshot returned to caller)
+```
+
+---
+
+## Next phase: replay
+
+The central question Phase 3 will answer is: how does the engine re-derive
+what the workflow should do next without re-running side effects?
+
+The answer is **replay**: when the engine needs to continue a workflow run, it
+reads the run's event history from the store, then re-executes the workflow
+definition from the beginning. On each execution step, instead of appending new
+events, it checks whether the next event in the history already records that
+decision. If it does, the engine skips the side effect and fast-forwards to the
+next unanswered decision point.
+
+This means workflow code must be **deterministic**: given the same history, it
+must always produce the same commands. A workflow that reads the system clock or
+generates a random number mid-execution cannot be replayed correctly.
+
+Phase 3 will add: history-driven re-execution, determinism constraints on
+workflow code, and the `ActivityCompleted` event that closes the loop started
+by `ActivityScheduled`.
