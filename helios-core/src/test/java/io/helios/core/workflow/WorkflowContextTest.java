@@ -4,24 +4,19 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("WorkflowContext")
+/**
+ * Tests for the {@link WorkflowContext} API contract and the
+ * {@link WorkflowSuspended} control-flow signal.
+ *
+ * <p>Detailed replay behaviour is covered in {@link WorkflowContextReplayTest}.
+ */
+@DisplayName("WorkflowContext — API contract")
 class WorkflowContextTest {
 
     @Test
-    @DisplayName("executeActivity throws UnsupportedOperationException before Phase 3 wiring is complete")
-    void executeActivityThrowsUnsupportedOperation() {
-        WorkflowContext ctx = new WorkflowContext();
-        Assertions.assertThatThrownBy(() -> ctx.executeActivity("checkCredit", "app-100"))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Phase 3");
-    }
-
-    @Test
-    @DisplayName("UnsupportedOperationException message names the unfinished replay wiring")
-    void executeActivityMessageDescribesIncompleteWiring() {
-        WorkflowContext ctx = new WorkflowContext();
-        Assertions.assertThatThrownBy(() -> ctx.executeActivity("checkCredit", "app-100"))
-                .hasMessageContaining("replay");
+    @DisplayName("no-arg constructor is a valid construction seam (empty-history context)")
+    void noArgConstructorIsValidSeam() {
+        Assertions.assertThatNoException().isThrownBy(WorkflowContext::new);
     }
 
     @Test
